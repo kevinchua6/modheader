@@ -96,10 +96,12 @@ function createDefaultProfileObject(name) {
     requestEnabled: true,
     responseEnabled: true,
     filtersEnabled: true,
+    tabFiltersEnabled: true,
     headers: [
       { id: uid("h"), type: "request", action: "set", name: "X-Clone-Header", value: "HelloFromClone", enabled: true }
     ],
-    filters: []
+    filters: [],
+    tabFilters: []
   };
 }
 
@@ -168,11 +170,16 @@ function setupEventListeners() {
     const p = getActiveProfile();
     if (p) { p.filtersEnabled = e.target.checked; toggleCard("filters-card", e.target.checked); saveState(); updateFilterHint(); }
   });
+  document.getElementById("tab-filters-section-enabled").addEventListener("change", (e) => {
+    const p = getActiveProfile();
+    if (p) { p.tabFiltersEnabled = e.target.checked; toggleCard("tab-filters-card", e.target.checked); saveState(); updateTabFilterHint(); }
+  });
 
   // Add row buttons
   document.getElementById("add-request-header-btn").addEventListener("click", () => addNewHeader("request"));
   document.getElementById("add-response-header-btn").addEventListener("click", () => addNewHeader("response"));
   document.getElementById("add-filter-btn").addEventListener("click", addNewFilter);
+  document.getElementById("add-tab-filter-btn").addEventListener("click", addNewTabFilter);
 
   // Import file input
   document.getElementById("import-file-input").addEventListener("change", handleImportFile);
@@ -260,6 +267,7 @@ function duplicateProfile() {
   copy.name = p.name + " copy";
   copy.headers = (copy.headers || []).map(h => ({ ...h, id: uid("h") }));
   copy.filters = (copy.filters || []).map(f => ({ ...f, id: uid("f") }));
+  copy.tabFilters = (copy.tabFilters || []).map(t => ({ ...t, id: uid("t") }));
   const idx = state.profiles.findIndex(x => x.id === p.id);
   state.profiles.splice(idx + 1, 0, copy);
   state.activeProfileId = copy.id;
@@ -366,6 +374,50 @@ async function addNewFilter() {
   saveState();
   renderFilterRows();
   updateFilterHint();
+}
+
+// Build a short, readable label (hostname + path) from a tab URL.
+function tabLabel(url, fallback) {
+  try {
+    const u = new URL(url);
+    const path = u.pathname === "/" ? "" : u.pathname.replace(/\/$/, "");
+    return u.hostname + path;
+  } catch (_) {
+    return fallback || url || "Tab";
+  }
+}
+
+async function addNewTabFilter() {
+  const p = getActiveProfile();
+  if (!p) return;
+  if (!p.tabFilters) p.tabFilters = [];
+
+  let tab;
+  try {
+    [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  } catch (_) {}
+
+  if (!tab || typeof tab.id !== "number" || tab.id < 0) {
+    alert("Couldn't read the current tab.");
+    return;
+  }
+
+  // Avoid adding the same tab twice.
+  if (p.tabFilters.some(t => t.tabId === tab.id)) {
+    alert("This tab is already in the list.");
+    return;
+  }
+
+  p.tabFilters.push({
+    id: uid("t"),
+    tabId: tab.id,
+    label: tabLabel(tab.url, tab.title),
+    favicon: tab.favIconUrl || "",
+    enabled: true
+  });
+  saveState();
+  renderTabFilterRows();
+  updateTabFilterHint();
 }
 
 // ---------- Rendering ----------
@@ -549,6 +601,71 @@ function updateFilterHint() {
   }
 }
 
+function renderTabFilterRows() {
+  const container = document.getElementById("tab-filter-rows");
+  container.innerHTML = "";
+  const p = getActiveProfile();
+  if (!p) return;
+  const tabFilters = p.tabFilters || [];
+
+  if (tabFilters.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-row";
+    empty.textContent = "No tab filters — modifications apply to all tabs.";
+    container.appendChild(empty);
+    return;
+  }
+
+  tabFilters.forEach((filter) => {
+    const row = document.createElement("div");
+    row.className = "tab-filter-row";
+    const faviconImg = filter.favicon
+      ? `<img class="tab-filter-favicon" src="${escapeHtml(filter.favicon)}" alt="">`
+      : "";
+    row.innerHTML = `
+      <input type="checkbox" class="row-check" ${filter.enabled ? "checked" : ""} title="Enable this tab filter">
+      <span class="tab-filter-label" title="${escapeHtml(filter.label)} (tab ${filter.tabId})">
+        ${faviconImg}
+        <span class="tab-filter-text">${escapeHtml(filter.label)}</span>
+      </span>
+      <button class="delete-btn" title="Delete">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    `;
+
+    row.querySelector(".row-check").addEventListener("change", (e) => {
+      filter.enabled = e.target.checked;
+      saveState();
+      updateTabFilterHint();
+    });
+    // A broken favicon (e.g. tab closed) just hides the image.
+    const img = row.querySelector(".tab-filter-favicon");
+    if (img) img.addEventListener("error", () => img.remove());
+    row.querySelector(".delete-btn").addEventListener("click", () => {
+      p.tabFilters = p.tabFilters.filter(f => f.id !== filter.id);
+      saveState();
+      renderTabFilterRows();
+      updateTabFilterHint();
+    });
+
+    container.appendChild(row);
+  });
+}
+
+function updateTabFilterHint() {
+  const p = getActiveProfile();
+  const hint = document.getElementById("tab-filter-hint");
+  if (!p) { hint.textContent = ""; return; }
+  const active = (p.tabFilters || []).filter(f => f.enabled);
+  const tabFiltersOn = p.tabFiltersEnabled !== false;
+  if (!tabFiltersOn || active.length === 0) {
+    hint.textContent = "Modifications apply to all tabs. Add the current tab to limit them to specific tabs.";
+  } else {
+    hint.textContent = "Modifications apply only in " + active.length + (active.length === 1 ? " tab." : " tabs.") +
+      " Tab filters reset when the browser restarts.";
+  }
+}
+
 function renderAll() {
   const p = getActiveProfile();
   if (!p) return;
@@ -569,8 +686,14 @@ function renderAll() {
   document.getElementById("filters-section-enabled").checked = filtOn;
   toggleCard("filters-card", filtOn);
 
+  const tabFiltOn = p.tabFiltersEnabled !== false;
+  document.getElementById("tab-filters-section-enabled").checked = tabFiltOn;
+  toggleCard("tab-filters-card", tabFiltOn);
+
   renderHeaderRows("request");
   renderHeaderRows("response");
   renderFilterRows();
   updateFilterHint();
+  renderTabFilterRows();
+  updateTabFilterHint();
 }
