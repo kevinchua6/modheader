@@ -331,7 +331,7 @@ function showHelp() {
     "• Request headers: add/remove headers sent with your requests.\n" +
     "• Response headers: add/remove headers on responses.\n" +
     "• Set vs Remove: 'Set' overrides a header value; 'Remove' strips it.\n" +
-    "• URL filters: optional regexes (e.g. .*example\\.com.*) to limit where changes apply. With no filters, changes apply everywhere.\n" +
+    "• URL filters: optional regexes (e.g. .*://example.com/.*) to limit where changes apply. With no filters, changes apply everywhere.\n" +
     "• Profiles: switch from the badge in the top-left; manage them from the ⋮ menu.\n" +
     "• Pause: the ⏸ button temporarily disables all modifications."
   );
@@ -357,7 +357,7 @@ async function addNewFilter() {
     if (tab && tab.url) {
       const { hostname } = new URL(tab.url);
       if (hostname) {
-        defaultValue = `.*${hostname.replace(/\./g, "\\.")}.*`;
+        defaultValue = `.*://${hostname}/.*`;
       }
     }
   } catch (_) {}
@@ -509,7 +509,7 @@ function renderFilterRows() {
     row.className = "filter-row";
     row.innerHTML = `
       <input type="checkbox" class="row-check" ${filter.enabled ? "checked" : ""} title="Enable this filter">
-      <input type="text" class="row-input row-value" value="${escapeHtml(filter.value)}" placeholder="URL regex (e.g. .*example\\.com.*)">
+      <input type="text" class="row-input row-value" value="${escapeHtml(filter.value)}" placeholder="URL regex (e.g. .*://example.com/.*)">
       <button class="delete-btn" title="Delete">
         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
