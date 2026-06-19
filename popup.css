@@ -52,7 +52,7 @@
     --focus-ring: rgba(94, 129, 172, 0.25);
     --row-hover: #D8DEE9;
     --menu-bg: #E5E9F0;
-    --badge-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
+    --badge-bg: #94abc8;
     --dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     --hint-bg: rgba(94, 129, 172, 0.08);
   }
@@ -81,7 +81,7 @@
   --focus-ring: rgba(94, 129, 172, 0.25);
   --row-hover: #D8DEE9;
   --menu-bg: #E5E9F0;
-  --badge-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
+  --badge-bg: #94abc8;
   --dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   --hint-bg: rgba(94, 129, 172, 0.08);
 }
@@ -290,6 +290,7 @@ body.preload *::after {
   font-weight: 700;
   font-size: 11px;
   flex-shrink: 0;
+  color: white;
 }
 .profile-entry .entry-name {
   flex: 1;
