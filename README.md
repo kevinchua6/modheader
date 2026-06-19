@@ -12,19 +12,17 @@ A lightweight Chrome extension to modify HTTP request and response headers and f
 
 ## Installation
 
-### Option 1: Direct CRX Install (Easiest)
+### Option 1: Load Unpacked (Recommended)
 
-1. Download the `modheader-clone.crx` file from the [releases](releases) page
+Chrome blocks `.crx` files that weren't downloaded from the Web Store (`CRX_REQUIRED_PROOF_MISSING`), so the easiest way to install is to load the unpacked source directly:
+
+1. Download or clone this repository and unzip it if needed
 2. Open Chrome and navigate to `chrome://extensions`
-3. Make sure **Developer mode** is enabled (toggle in the top-right corner)
-4. Drag and drop the `.crx` file onto the extensions page
-5. Click **Add extension** to confirm
+3. Enable **Developer mode** (toggle in the top-right corner)
+4. Click **Load unpacked** and select the project folder
+5. The extension will appear in your toolbar immediately
 
-The extension will now appear in your Chrome toolbar!
-
-### Option 2: Load Unpacked (For Developers)
-
-If you want to build from source:
+### Option 2: Build from Source
 
 1. Clone this repository:
 
@@ -91,11 +89,9 @@ This extension requires:
 - Verify the rule is enabled (checkbox is checked)
 - Some sites may have security policies preventing header modifications
 
-### CRX file won't install
+### CRX file won't install (`CRX_REQUIRED_PROOF_MISSING`)
 
-- Make sure you're using Chrome (not Edge or other Chromium browsers, though most should work)
-- Ensure Developer mode is enabled
-- Try dragging the file directly into the extensions page
+Chrome rejects `.crx` files not downloaded from the Web Store. Use the **Load unpacked** method instead — see [Installation](#installation) above.
 
 ## Support
 

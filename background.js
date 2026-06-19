@@ -16,8 +16,15 @@ const ALL_RESOURCE_TYPES = [
   "other",
 ];
 
+// Serialize rebuildRules calls so concurrent storage-change events never interleave.
+let _rebuildQueue = Promise.resolve();
+function rebuildRules() {
+  _rebuildQueue = _rebuildQueue.then(_rebuildRules);
+  return _rebuildQueue;
+}
+
 // Rebuild declarativeNetRequest dynamic rules based on current storage state
-async function rebuildRules() {
+async function _rebuildRules() {
   try {
     const data = await chrome.storage.local.get([
       "profiles",
@@ -139,33 +146,21 @@ async function rebuildRules() {
       }
     }
 
-    // Refresh both rule stores. Remove existing rules first to avoid Chromium
-    // ID conflict bugs, then add the new ones.
+    // Atomically swap old rules for new ones in a single call each to avoid
+    // ID conflicts when concurrent rebuildRules calls interleave.
     const existingDynamic =
       await chrome.declarativeNetRequest.getDynamicRules();
-    if (existingDynamic.length > 0) {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: existingDynamic.map((r) => r.id),
-      });
-    }
-    if (dynamicAdd.length > 0) {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        addRules: dynamicAdd,
-      });
-    }
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existingDynamic.map((r) => r.id),
+      addRules: dynamicAdd,
+    });
 
     const existingSession =
       await chrome.declarativeNetRequest.getSessionRules();
-    if (existingSession.length > 0) {
-      await chrome.declarativeNetRequest.updateSessionRules({
-        removeRuleIds: existingSession.map((r) => r.id),
-      });
-    }
-    if (sessionAdd.length > 0) {
-      await chrome.declarativeNetRequest.updateSessionRules({
-        addRules: sessionAdd,
-      });
-    }
+    await chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: existingSession.map((r) => r.id),
+      addRules: sessionAdd,
+    });
 
     console.log(
       `Successfully updated rules. Dynamic: ${dynamicAdd.length}, Session: ${sessionAdd.length}`,
