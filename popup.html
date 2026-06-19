@@ -6,7 +6,7 @@
   <title>ModHeader Clone</title>
   <link rel="stylesheet" href="popup.css">
 </head>
-<body>
+<body class="preload">
   <!-- Top Bar -->
   <header class="top-header">
     <div class="header-left">
@@ -49,20 +49,20 @@
         <button class="dropdown-item" data-action="export">Export this profile</button>
         <button class="dropdown-item" data-action="import">Import profiles…</button>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item" data-action="fullscreen">Open in a tab</button>
+        <button class="dropdown-item" data-action="fullscreen">Open fullscreen</button>
         <button class="dropdown-item" data-action="help">Help</button>
       </div>
     </div>
   </header>
 
   <!-- Scrollable Content -->
-  <main class="content">
+  <main class="content content-hidden">
     <!-- Request headers -->
     <section class="card" id="request-card">
       <div class="card-head">
         <h2 class="card-title">Request headers</h2>
         <label class="switch" title="Enable request header modifications">
-          <input type="checkbox" id="request-section-enabled" checked>
+          <input type="checkbox" id="request-section-enabled">
           <span class="slider"></span>
         </label>
       </div>
@@ -78,7 +78,7 @@
       <div class="card-head">
         <h2 class="card-title">Response headers</h2>
         <label class="switch" title="Enable response header modifications">
-          <input type="checkbox" id="response-section-enabled" checked>
+          <input type="checkbox" id="response-section-enabled">
           <span class="slider"></span>
         </label>
       </div>
@@ -94,7 +94,7 @@
       <div class="card-head">
         <h2 class="card-title">URL filters <span class="card-subtitle">optional</span></h2>
         <label class="switch" title="Enable URL filters">
-          <input type="checkbox" id="filters-section-enabled" checked>
+          <input type="checkbox" id="filters-section-enabled">
           <span class="slider"></span>
         </label>
       </div>

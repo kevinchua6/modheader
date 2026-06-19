@@ -26,9 +26,19 @@ function debouncedSave() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (new URLSearchParams(window.location.search).get("fullscreen") === "1") {
+    document.body.classList.add("tabview");
+  }
   await loadState();
   setupEventListeners();
   renderAll();
+  // Reveal now that sections are in their final state. Transitions are still
+  // suppressed (body.preload) so nothing animates into place; re-enable them
+  // after the first paint for subsequent user interactions.
+  document.querySelector(".content").classList.remove("content-hidden");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => document.body.classList.remove("preload"));
+  });
 });
 
 // ---------- Persistence ----------
@@ -181,7 +191,7 @@ function handleMenuAction(action) {
     case "delete": deleteProfile(); break;
     case "export": exportProfile(); break;
     case "import": document.getElementById("import-file-input").click(); break;
-    case "fullscreen": chrome.tabs.create({ url: chrome.runtime.getURL("popup.html") }); break;
+    case "fullscreen": chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?fullscreen=1") }); break;
     case "help": showHelp(); break;
   }
 }
@@ -311,11 +321,23 @@ function addNewHeader(type) {
   renderHeaderRows(type);
 }
 
-function addNewFilter() {
+async function addNewFilter() {
   const p = getActiveProfile();
   if (!p) return;
   if (!p.filters) p.filters = [];
-  p.filters.push({ id: uid("f"), type: "url_regex", value: "", enabled: true });
+
+  let defaultValue = "";
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.url) {
+      const { hostname } = new URL(tab.url);
+      if (hostname) {
+        defaultValue = `.*${hostname.replace(/\./g, "\\.")}.*`;
+      }
+    }
+  } catch (_) {}
+
+  p.filters.push({ id: uid("f"), type: "url_regex", value: defaultValue, enabled: true });
   saveState();
   renderFilterRows();
   updateFilterHint();
