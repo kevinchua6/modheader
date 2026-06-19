@@ -5,6 +5,29 @@ let state = {
   enabled: true
 };
 
+let themeMode = "system"; // "system" | "dark" | "light"
+
+function applyTheme(mode) {
+  themeMode = mode;
+  const html = document.documentElement;
+  if (mode === "system") {
+    html.removeAttribute("data-theme");
+  } else {
+    html.setAttribute("data-theme", mode);
+  }
+  const label = document.getElementById("theme-toggle-label");
+  if (label) {
+    label.textContent = mode === "dark" ? "Theme: Dark" : mode === "light" ? "Theme: Light" : "Theme: System";
+  }
+}
+
+function cycleTheme() {
+  const next = { system: "dark", dark: "light", light: "system" };
+  const newMode = next[themeMode] || "dark";
+  applyTheme(newMode);
+  chrome.storage.local.set({ theme: newMode });
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -44,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ---------- Persistence ----------
 function loadState() {
   return new Promise((resolve) => {
-    chrome.storage.local.get(["profiles", "activeProfileId", "enabled"], (result) => {
+    chrome.storage.local.get(["profiles", "activeProfileId", "enabled", "theme"], (result) => {
       if (result.profiles && result.profiles.length > 0) {
         state.profiles = result.profiles;
         state.activeProfileId = result.activeProfileId || result.profiles[0].id;
@@ -56,6 +79,7 @@ function loadState() {
         state.enabled = true;
         saveState();
       }
+      applyTheme(result.theme || "system");
       resolve();
     });
   });
@@ -193,6 +217,7 @@ function handleMenuAction(action) {
     case "import": document.getElementById("import-file-input").click(); break;
     case "fullscreen": chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?fullscreen=1") }); break;
     case "help": showHelp(); break;
+    case "toggle-theme": cycleTheme(); break;
   }
 }
 
