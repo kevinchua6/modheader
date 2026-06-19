@@ -205,7 +205,7 @@ function closeAllDropdowns() {
 
 // ---------- Menu actions ----------
 function handleMenuAction(action) {
-  closeAllDropdowns();
+  if (action !== "toggle-theme") closeAllDropdowns();
   const p = getActiveProfile();
   if (!p) return;
 
