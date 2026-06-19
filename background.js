@@ -27,25 +27,26 @@ async function rebuildRules() {
     const activeProfileId = data.activeProfileId;
     
     const activeProfile = profiles.find(p => p.id === activeProfileId);
-    
-    // Get all existing dynamic rules to remove them
-    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-    const existingRuleIds = existingRules.map(r => r.id);
-    
-    const addRules = [];
-    
+
+    // Rules without a tab condition can live in dynamic rules; rules that filter
+    // by tab MUST be session-scoped, since DNR only supports condition.tabIds
+    // on session rules.
+    const dynamicAdd = [];
+    const sessionAdd = [];
+
     if (enabled && activeProfile) {
       const requestEnabled = activeProfile.requestEnabled !== false;
       const responseEnabled = activeProfile.responseEnabled !== false;
       const filtersEnabled = activeProfile.filtersEnabled !== false;
-      
+      const tabFiltersEnabled = activeProfile.tabFiltersEnabled !== false;
+
       // Filter enabled headers
       const activeHeaders = (activeProfile.headers || []).filter(h => h.enabled && h.name);
-      
+
       // Build request and response header lists for DNR
       const requestHeaders = [];
       const responseHeaders = [];
-      
+
       activeHeaders.forEach(h => {
         const ruleHeader = {
           header: h.name,
@@ -54,80 +55,87 @@ async function rebuildRules() {
         if (h.action !== "remove") {
           ruleHeader.value = h.value || "";
         }
-        
+
         if (h.type === "request" && requestEnabled) {
           requestHeaders.push(ruleHeader);
         } else if (h.type === "response" && responseEnabled) {
           responseHeaders.push(ruleHeader);
         }
       });
-      
+
       if (requestHeaders.length > 0 || responseHeaders.length > 0) {
-        // Filter enabled filters
-        const activeFilters = filtersEnabled ? (activeProfile.filters || []).filter(f => f.enabled && f.value) : [];
-        
-        let ruleId = 1;
-        
-        if (activeFilters.length === 0) {
-          // No active filters, apply modifications to all URLs
+        const buildAction = () => {
           const action = { type: "modifyHeaders" };
           if (requestHeaders.length > 0) action.requestHeaders = requestHeaders;
           if (responseHeaders.length > 0) action.responseHeaders = responseHeaders;
-          
-          addRules.push({
-            id: ruleId++,
-            priority: 1,
-            action: action,
-            condition: {
-              urlFilter: "*",
-              resourceTypes: ALL_RESOURCE_TYPES
-            }
-          });
+          return action;
+        };
+
+        // URL conditions: one per valid regex filter, or a single match-all.
+        const activeFilters = filtersEnabled ? (activeProfile.filters || []).filter(f => f.enabled && f.value) : [];
+        const urlConditions = [];
+        if (activeFilters.length === 0) {
+          urlConditions.push({ urlFilter: "*", resourceTypes: ALL_RESOURCE_TYPES });
         } else {
-          // Create a rule for each active filter (any match will trigger modification)
           for (const filter of activeFilters) {
-            const action = { type: "modifyHeaders" };
-            if (requestHeaders.length > 0) action.requestHeaders = requestHeaders;
-            if (responseHeaders.length > 0) action.responseHeaders = responseHeaders;
-            
-            // Validate regex
-            let isRegexValid = true;
             try {
               new RegExp(filter.value);
             } catch (e) {
               console.error(`Invalid regex: ${filter.value}`, e);
-              isRegexValid = false;
+              continue;
             }
-            
-            if (isRegexValid) {
-              addRules.push({
-                id: ruleId++,
-                priority: 1,
-                action: action,
-                condition: {
-                  regexFilter: filter.value,
-                  resourceTypes: ALL_RESOURCE_TYPES
-                }
-              });
-            }
+            urlConditions.push({ regexFilter: filter.value, resourceTypes: ALL_RESOURCE_TYPES });
+          }
+        }
+
+        // Tab IDs restrict where rules apply. With no tab filters, rules apply
+        // to all tabs (no tabIds condition).
+        const activeTabIds = tabFiltersEnabled
+          ? [...new Set((activeProfile.tabFilters || [])
+              .filter(t => t.enabled && Number.isInteger(t.tabId) && t.tabId >= 0)
+              .map(t => t.tabId))]
+          : [];
+
+        let ruleId = 1;
+        for (const cond of urlConditions) {
+          if (activeTabIds.length > 0) {
+            sessionAdd.push({
+              id: ruleId++,
+              priority: 1,
+              action: buildAction(),
+              condition: { ...cond, tabIds: activeTabIds }
+            });
+          } else {
+            dynamicAdd.push({
+              id: ruleId++,
+              priority: 1,
+              action: buildAction(),
+              condition: cond
+            });
           }
         }
       }
     }
-    
-    // Update the dynamic rules by removing existing ones first, then adding new ones to avoid Chromium ID conflict bugs
-    if (existingRuleIds.length > 0) {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: existingRuleIds
-      });
+
+    // Refresh both rule stores. Remove existing rules first to avoid Chromium
+    // ID conflict bugs, then add the new ones.
+    const existingDynamic = await chrome.declarativeNetRequest.getDynamicRules();
+    if (existingDynamic.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: existingDynamic.map(r => r.id) });
     }
-    if (addRules.length > 0) {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        addRules: addRules
-      });
+    if (dynamicAdd.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({ addRules: dynamicAdd });
     }
-    
-    console.log(`Successfully updated rules. Removed: ${existingRuleIds.length}, Added: ${addRules.length}`);
+
+    const existingSession = await chrome.declarativeNetRequest.getSessionRules();
+    if (existingSession.length > 0) {
+      await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: existingSession.map(r => r.id) });
+    }
+    if (sessionAdd.length > 0) {
+      await chrome.declarativeNetRequest.updateSessionRules({ addRules: sessionAdd });
+    }
+
+    console.log(`Successfully updated rules. Dynamic: ${dynamicAdd.length}, Session: ${sessionAdd.length}`);
     
     // Update extension badge / icon if necessary to indicate state
     updateExtensionUIState(enabled, activeProfile);
