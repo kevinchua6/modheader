@@ -214,7 +214,7 @@ body.preload *::after {
 }
 .header-action-btn svg { width: 18px; height: 18px; }
 .header-action-btn:hover { background: rgba(255, 255, 255, 0.15); color: white; }
-.header-action-btn.pause { background: rgba(255, 255, 255, 0.12); }
+.header-action-btn.pause { background: rgba(255, 255, 255, 0.18); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset; }
 .header-action-btn.play { background: var(--accent-green); color: white; }
 .header-action-btn.play:hover { background: var(--accent-green-hover); }
 
