@@ -12,31 +12,28 @@ A lightweight Chrome extension to modify HTTP request and response headers and f
 
 ## Installation
 
-### Option 1: Load Unpacked (Recommended)
+> **Note:** Chrome blocks `.crx` files not from the Web Store (`CRX_REQUIRED_PROOF_MISSING`), so installation requires loading the extension unpacked.
 
-Chrome blocks `.crx` files that weren't downloaded from the Web Store (`CRX_REQUIRED_PROOF_MISSING`), so the easiest way to install is to load the unpacked source directly:
+### Option 1: Download from Releases (Recommended)
 
-1. Download or clone this repository and unzip it if needed
-2. Open Chrome and navigate to `chrome://extensions`
-3. Enable **Developer mode** (toggle in the top-right corner)
-4. Click **Load unpacked** and select the project folder
-5. The extension will appear in your toolbar immediately
+1. Go to the [Releases page](../../releases) and download the latest `.zip`
+2. Unzip the file
+3. Open Chrome and navigate to `chrome://extensions`
+4. Enable **Developer mode** (toggle in the top-right corner)
+5. Click **Load unpacked** and select the unzipped folder
+6. The extension will appear in your toolbar immediately
 
-### Option 2: Build from Source
+### Option 2: Clone from Source
 
 1. Clone this repository:
 
    ```bash
    git clone https://github.com/yourusername/modheader-clone.git
-   cd modheader-clone
    ```
 
 2. Open Chrome and navigate to `chrome://extensions`
-
-3. Enable **Developer mode** (toggle in top-right corner)
-
-4. Click **Load unpacked** and select the project folder
-
+3. Enable **Developer mode** (toggle in the top-right corner)
+4. Click **Load unpacked** and select the cloned folder
 5. The extension will appear in your toolbar immediately
 
 ## Usage
@@ -88,10 +85,6 @@ This extension requires:
 - Check that your URL pattern matches the target site
 - Verify the rule is enabled (checkbox is checked)
 - Some sites may have security policies preventing header modifications
-
-### CRX file won't install (`CRX_REQUIRED_PROOF_MISSING`)
-
-Chrome rejects `.crx` files not downloaded from the Web Store. Use the **Load unpacked** method instead — see [Installation](#installation) above.
 
 ## Support
 
