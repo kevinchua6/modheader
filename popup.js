@@ -168,11 +168,11 @@ function setupEventListeners() {
   });
   document.getElementById("filters-section-enabled").addEventListener("change", (e) => {
     const p = getActiveProfile();
-    if (p) { p.filtersEnabled = e.target.checked; toggleCard("filters-card", e.target.checked); saveState(); updateFilterHint(); }
+    if (p) { p.filtersEnabled = e.target.checked; toggleCard("filters-card", e.target.checked); saveState(); }
   });
   document.getElementById("tab-filters-section-enabled").addEventListener("change", (e) => {
     const p = getActiveProfile();
-    if (p) { p.tabFiltersEnabled = e.target.checked; toggleCard("tab-filters-card", e.target.checked); saveState(); updateTabFilterHint(); }
+    if (p) { p.tabFiltersEnabled = e.target.checked; toggleCard("tab-filters-card", e.target.checked); saveState(); }
   });
 
   // Add row buttons
@@ -373,7 +373,6 @@ async function addNewFilter() {
   p.filters.push({ id: uid("f"), type: "url_regex", value: defaultValue, enabled: true });
   saveState();
   renderFilterRows();
-  updateFilterHint();
 }
 
 // Build a short, readable label (hostname + path) from a tab URL.
@@ -417,7 +416,6 @@ async function addNewTabFilter() {
   });
   saveState();
   renderTabFilterRows();
-  updateTabFilterHint();
 }
 
 // ---------- Rendering ----------
@@ -570,35 +568,19 @@ function renderFilterRows() {
     row.querySelector(".row-check").addEventListener("change", (e) => {
       filter.enabled = e.target.checked;
       saveState();
-      updateFilterHint();
     });
     row.querySelector(".row-value").addEventListener("input", (e) => {
       filter.value = e.target.value.trim();
       debouncedSave();
-      updateFilterHint();
     });
     row.querySelector(".delete-btn").addEventListener("click", () => {
       p.filters = p.filters.filter(f => f.id !== filter.id);
       saveState();
       renderFilterRows();
-      updateFilterHint();
     });
 
     container.appendChild(row);
   });
-}
-
-function updateFilterHint() {
-  const p = getActiveProfile();
-  const hint = document.getElementById("filter-hint");
-  if (!p) { hint.textContent = ""; return; }
-  const active = (p.filters || []).filter(f => f.enabled && f.value);
-  const filtersOn = p.filtersEnabled !== false;
-  if (!filtersOn || active.length === 0) {
-    hint.textContent = "Modifications apply to all requests. Add a filter to limit them to certain URLs.";
-  } else {
-    hint.textContent = "Modifications apply only to URLs matching: " + active.map(f => `"${f.value}"`).join(" or ") + ".";
-  }
 }
 
 function renderTabFilterRows() {
@@ -607,14 +589,6 @@ function renderTabFilterRows() {
   const p = getActiveProfile();
   if (!p) return;
   const tabFilters = p.tabFilters || [];
-
-  if (tabFilters.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-row";
-    empty.textContent = "No tab filters — modifications apply to all tabs.";
-    container.appendChild(empty);
-    return;
-  }
 
   tabFilters.forEach((filter) => {
     const row = document.createElement("div");
@@ -636,7 +610,6 @@ function renderTabFilterRows() {
     row.querySelector(".row-check").addEventListener("change", (e) => {
       filter.enabled = e.target.checked;
       saveState();
-      updateTabFilterHint();
     });
     // A broken favicon (e.g. tab closed) just hides the image.
     const img = row.querySelector(".tab-filter-favicon");
@@ -645,25 +618,10 @@ function renderTabFilterRows() {
       p.tabFilters = p.tabFilters.filter(f => f.id !== filter.id);
       saveState();
       renderTabFilterRows();
-      updateTabFilterHint();
     });
 
     container.appendChild(row);
   });
-}
-
-function updateTabFilterHint() {
-  const p = getActiveProfile();
-  const hint = document.getElementById("tab-filter-hint");
-  if (!p) { hint.textContent = ""; return; }
-  const active = (p.tabFilters || []).filter(f => f.enabled);
-  const tabFiltersOn = p.tabFiltersEnabled !== false;
-  if (!tabFiltersOn || active.length === 0) {
-    hint.textContent = "Modifications apply to all tabs. Add the current tab to limit them to specific tabs.";
-  } else {
-    hint.textContent = "Modifications apply only in " + active.length + (active.length === 1 ? " tab." : " tabs.") +
-      " Tab filters reset when the browser restarts.";
-  }
 }
 
 function renderAll() {
@@ -693,7 +651,5 @@ function renderAll() {
   renderHeaderRows("request");
   renderHeaderRows("response");
   renderFilterRows();
-  updateFilterHint();
   renderTabFilterRows();
-  updateTabFilterHint();
 }
