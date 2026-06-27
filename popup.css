@@ -325,6 +325,20 @@ body.preload *::after {
 .card.disabled { opacity: 0.45; }
 .card.disabled .rows, .card.disabled .add-row-btn { pointer-events: none; }
 
+/* Global pause: gray out and block editing everywhere except the play button */
+body.extension-disabled .header-left,
+body.extension-disabled #menu-btn {
+  opacity: 0.45;
+  pointer-events: none;
+}
+body.extension-disabled .content {
+  pointer-events: none;
+}
+/* Only dim sections that are still enabled; already-disabled cards stay at 0.45 */
+body.extension-disabled .card:not(.disabled) {
+  opacity: 0.45;
+}
+
 .card-head {
   display: flex;
   align-items: center;

@@ -424,11 +424,14 @@ function updatePausePlayUI() {
   const pauseIcon = document.getElementById("pause-icon");
   const playIcon = document.getElementById("play-icon");
   if (state.enabled) {
+    document.body.classList.remove("extension-disabled");
     btn.className = "header-action-btn pause";
     btn.title = "Pause modifying headers";
     pauseIcon.classList.remove("hidden");
     playIcon.classList.add("hidden");
   } else {
+    document.body.classList.add("extension-disabled");
+    closeAllDropdowns();
     btn.className = "header-action-btn play";
     btn.title = "Resume modifying headers";
     pauseIcon.classList.add("hidden");
