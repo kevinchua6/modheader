@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ModHeader Clone",
+  "name": "OpenHeader",
   "version": "1.0.0",
-  "description": "A simple clone of ModHeader to modify request and response headers and filter by URL regexes.",
+  "description": "A lightweight open-source extension to modify request and response headers and filter by URL regexes.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -23,7 +23,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "ModHeader Clone",
+    "default_title": "OpenHeader",
     "default_popup": "popup.html"
   },
   "background": {

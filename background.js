@@ -177,11 +177,11 @@ function updateExtensionUIState(enabled, activeProfile) {
   if (!enabled) {
     chrome.action.setBadgeText({ text: "II" });
     chrome.action.setBadgeBackgroundColor({ color: "#4C566A" });
-    chrome.action.setTitle({ title: "ModHeader Clone (Paused)" });
+    chrome.action.setTitle({ title: "OpenHeader (Paused)" });
   } else if (!activeProfile) {
     chrome.action.setBadgeText({ text: "OFF" });
     chrome.action.setBadgeBackgroundColor({ color: "#BF616A" });
-    chrome.action.setTitle({ title: "ModHeader Clone (No Active Profile)" });
+    chrome.action.setTitle({ title: "OpenHeader (No Active Profile)" });
   } else {
     // Show active headers count on the badge
     const requestEnabled = activeProfile.requestEnabled !== false;
@@ -195,7 +195,7 @@ function updateExtensionUIState(enabled, activeProfile) {
     chrome.action.setBadgeText({ text: activeHeadersCount.toString() });
     chrome.action.setBadgeBackgroundColor({ color: "#A3BE8C" });
     chrome.action.setTitle({
-      title: `ModHeader Clone (Active: ${activeProfile.name})`,
+      title: `OpenHeader (Active: ${activeProfile.name})`,
     });
   }
 }

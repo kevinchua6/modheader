@@ -335,7 +335,7 @@ function handleImportFile(e) {
 
 function showHelp() {
   alert(
-    "ModHeader Clone — Help\n\n" +
+    "OpenHeader — Help\n\n" +
     "• Request headers: add/remove headers sent with your requests.\n" +
     "• Response headers: add/remove headers on responses.\n" +
     "• Set vs Remove: 'Set' overrides a header value; 'Remove' strips it.\n" +

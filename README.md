@@ -1,4 +1,4 @@
-# ModHeader Clone
+# OpenHeader
 
 A lightweight Chrome extension to modify HTTP request and response headers and filter requests by URL patterns.
 
@@ -28,7 +28,7 @@ A lightweight Chrome extension to modify HTTP request and response headers and f
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/yourusername/modheader-clone.git
+   git clone https://github.com/yourusername/openheader.git
    ```
 
 2. Open Chrome and navigate to `chrome://extensions`
@@ -40,7 +40,7 @@ A lightweight Chrome extension to modify HTTP request and response headers and f
 
 ### Basic Setup
 
-1. Click the **ModHeader Clone** icon in your Chrome toolbar
+1. Click the **OpenHeader** icon in your Chrome toolbar
 2. Add a new header rule:
    - Enter a **URL pattern** (e.g., `api.example.com`, `.*\.github\.com.*`)
    - Enter the **header name** (e.g., `Authorization`, `X-Custom-Header`)
