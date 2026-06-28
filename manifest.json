@@ -12,8 +12,7 @@
   "permissions": [
     "storage",
     "tabs",
-    "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess"
+    "declarativeNetRequest"
   ],
   "host_permissions": ["*://*/*"],
   "action": {
