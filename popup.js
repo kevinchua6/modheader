@@ -2,7 +2,7 @@
 let state = {
   profiles: [],
   activeProfileId: "",
-  enabled: true
+  enabled: true,
 };
 
 let themeMode = "system"; // "system" | "dark" | "light"
@@ -17,7 +17,12 @@ function applyTheme(mode) {
   }
   const label = document.getElementById("theme-toggle-label");
   if (label) {
-    label.textContent = mode === "dark" ? "Theme: Dark" : mode === "light" ? "Theme: Light" : "Theme: System";
+    label.textContent =
+      mode === "dark"
+        ? "Theme: Dark"
+        : mode === "light"
+          ? "Theme: Light"
+          : "Theme: System";
   }
 }
 
@@ -29,12 +34,12 @@ function cycleTheme() {
 }
 
 function escapeHtml(str) {
-  if (!str) return '';
+  if (!str) return "";
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function uid(prefix) {
@@ -67,21 +72,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ---------- Persistence ----------
 function loadState() {
   return new Promise((resolve) => {
-    chrome.storage.local.get(["profiles", "activeProfileId", "enabled", "theme"], (result) => {
-      if (result.profiles && result.profiles.length > 0) {
-        state.profiles = result.profiles;
-        state.activeProfileId = result.activeProfileId || result.profiles[0].id;
-        state.enabled = result.enabled !== false;
-      } else {
-        const def = createDefaultProfileObject("Profile 1");
-        state.profiles = [def];
-        state.activeProfileId = def.id;
-        state.enabled = true;
-        saveState();
-      }
-      applyTheme(result.theme || "system");
-      resolve();
-    });
+    chrome.storage.local.get(
+      ["profiles", "activeProfileId", "enabled", "theme"],
+      (result) => {
+        if (result.profiles && result.profiles.length > 0) {
+          state.profiles = result.profiles;
+          state.activeProfileId =
+            result.activeProfileId || result.profiles[0].id;
+          state.enabled = result.enabled !== false;
+        } else {
+          const def = createDefaultProfileObject("Profile 1");
+          state.profiles = [def];
+          state.activeProfileId = def.id;
+          state.enabled = true;
+          saveState();
+        }
+        applyTheme(result.theme || "system");
+        resolve();
+      },
+    );
   });
 }
 
@@ -98,15 +107,22 @@ function createDefaultProfileObject(name) {
     filtersEnabled: true,
     tabFiltersEnabled: true,
     headers: [
-      { id: uid("h"), type: "request", action: "set", name: "X-Clone-Header", value: "HelloFromClone", enabled: true }
+      {
+        id: uid("h"),
+        type: "request",
+        action: "set",
+        name: "X-Test-Header",
+        value: "TestHeader",
+        enabled: true,
+      },
     ],
     filters: [],
-    tabFilters: []
+    tabFilters: [],
   };
 }
 
 function getActiveProfile() {
-  return state.profiles.find(p => p.id === state.activeProfileId);
+  return state.profiles.find((p) => p.id === state.activeProfileId);
 }
 
 // ---------- Event Listeners ----------
@@ -127,7 +143,9 @@ function setupEventListeners() {
 
   // Add profile
   document.getElementById("add-profile-btn").addEventListener("click", () => {
-    const newProfile = createDefaultProfileObject(`Profile ${state.profiles.length + 1}`);
+    const newProfile = createDefaultProfileObject(
+      `Profile ${state.profiles.length + 1}`,
+    );
     newProfile.headers = []; // start blank for additional profiles
     state.profiles.push(newProfile);
     state.activeProfileId = newProfile.id;
@@ -143,7 +161,7 @@ function setupEventListeners() {
     toggleDropdown("main-menu", menuBtn);
   });
 
-  document.querySelectorAll("#main-menu .dropdown-item").forEach(item => {
+  document.querySelectorAll("#main-menu .dropdown-item").forEach((item) => {
     item.addEventListener("click", () => {
       handleMenuAction(item.getAttribute("data-action"));
     });
@@ -152,46 +170,88 @@ function setupEventListeners() {
   // Inline rename input
   const nameInput = document.getElementById("profile-name-input");
   nameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); nameInput.blur(); }
-    if (e.key === "Escape") { e.preventDefault(); finishRename(false); }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      nameInput.blur();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      finishRename(false);
+    }
   });
   nameInput.addEventListener("blur", () => finishRename(true));
 
   // Section toggles
-  document.getElementById("request-section-enabled").addEventListener("change", (e) => {
-    const p = getActiveProfile();
-    if (p) { p.requestEnabled = e.target.checked; toggleCard("request-card", e.target.checked); saveState(); }
-  });
-  document.getElementById("response-section-enabled").addEventListener("change", (e) => {
-    const p = getActiveProfile();
-    if (p) { p.responseEnabled = e.target.checked; toggleCard("response-card", e.target.checked); saveState(); }
-  });
-  document.getElementById("filters-section-enabled").addEventListener("change", (e) => {
-    const p = getActiveProfile();
-    if (p) { p.filtersEnabled = e.target.checked; toggleCard("filters-card", e.target.checked); saveState(); }
-  });
-  document.getElementById("tab-filters-section-enabled").addEventListener("change", (e) => {
-    const p = getActiveProfile();
-    if (p) { p.tabFiltersEnabled = e.target.checked; toggleCard("tab-filters-card", e.target.checked); saveState(); }
-  });
+  document
+    .getElementById("request-section-enabled")
+    .addEventListener("change", (e) => {
+      const p = getActiveProfile();
+      if (p) {
+        p.requestEnabled = e.target.checked;
+        toggleCard("request-card", e.target.checked);
+        saveState();
+      }
+    });
+  document
+    .getElementById("response-section-enabled")
+    .addEventListener("change", (e) => {
+      const p = getActiveProfile();
+      if (p) {
+        p.responseEnabled = e.target.checked;
+        toggleCard("response-card", e.target.checked);
+        saveState();
+      }
+    });
+  document
+    .getElementById("filters-section-enabled")
+    .addEventListener("change", (e) => {
+      const p = getActiveProfile();
+      if (p) {
+        p.filtersEnabled = e.target.checked;
+        toggleCard("filters-card", e.target.checked);
+        saveState();
+      }
+    });
+  document
+    .getElementById("tab-filters-section-enabled")
+    .addEventListener("change", (e) => {
+      const p = getActiveProfile();
+      if (p) {
+        p.tabFiltersEnabled = e.target.checked;
+        toggleCard("tab-filters-card", e.target.checked);
+        saveState();
+      }
+    });
 
   // Add row buttons
-  document.getElementById("add-request-header-btn").addEventListener("click", () => addNewHeader("request"));
-  document.getElementById("add-response-header-btn").addEventListener("click", () => addNewHeader("response"));
-  document.getElementById("add-filter-btn").addEventListener("click", addNewFilter);
-  document.getElementById("add-tab-filter-btn").addEventListener("click", addNewTabFilter);
+  document
+    .getElementById("add-request-header-btn")
+    .addEventListener("click", () => addNewHeader("request"));
+  document
+    .getElementById("add-response-header-btn")
+    .addEventListener("click", () => addNewHeader("response"));
+  document
+    .getElementById("add-filter-btn")
+    .addEventListener("click", addNewFilter);
+  document
+    .getElementById("add-tab-filter-btn")
+    .addEventListener("click", addNewTabFilter);
 
   // Import file input
-  document.getElementById("import-file-input").addEventListener("change", handleImportFile);
+  document
+    .getElementById("import-file-input")
+    .addEventListener("change", handleImportFile);
 
   // Keep clicks inside a menu from bubbling to the document close handler
-  document.querySelectorAll(".dropdown-menu").forEach(menu => {
+  document.querySelectorAll(".dropdown-menu").forEach((menu) => {
     menu.addEventListener("click", (e) => e.stopPropagation());
   });
 
   // Close dropdowns on outside click / Escape
   document.addEventListener("click", closeAllDropdowns);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAllDropdowns(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAllDropdowns();
+  });
 }
 
 // ---------- Dropdown helpers ----------
@@ -206,7 +266,9 @@ function toggleDropdown(menuId, triggerEl) {
 }
 
 function closeAllDropdowns() {
-  document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.add("hidden"));
+  document
+    .querySelectorAll(".dropdown-menu")
+    .forEach((m) => m.classList.add("hidden"));
   document.getElementById("profile-switcher").classList.remove("open");
 }
 
@@ -217,14 +279,32 @@ function handleMenuAction(action) {
   if (!p) return;
 
   switch (action) {
-    case "rename": startRename(); break;
-    case "duplicate": duplicateProfile(); break;
-    case "delete": deleteProfile(); break;
-    case "export": exportProfile(); break;
-    case "import": document.getElementById("import-file-input").click(); break;
-    case "fullscreen": chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?fullscreen=1") }); break;
-    case "help": showHelp(); break;
-    case "toggle-theme": cycleTheme(); break;
+    case "rename":
+      startRename();
+      break;
+    case "duplicate":
+      duplicateProfile();
+      break;
+    case "delete":
+      deleteProfile();
+      break;
+    case "export":
+      exportProfile();
+      break;
+    case "import":
+      document.getElementById("import-file-input").click();
+      break;
+    case "fullscreen":
+      chrome.tabs.create({
+        url: chrome.runtime.getURL("popup.html?fullscreen=1"),
+      });
+      break;
+    case "help":
+      showHelp();
+      break;
+    case "toggle-theme":
+      cycleTheme();
+      break;
   }
 }
 
@@ -265,10 +345,13 @@ function duplicateProfile() {
   const copy = JSON.parse(JSON.stringify(p));
   copy.id = uid("profile");
   copy.name = p.name + " copy";
-  copy.headers = (copy.headers || []).map(h => ({ ...h, id: uid("h") }));
-  copy.filters = (copy.filters || []).map(f => ({ ...f, id: uid("f") }));
-  copy.tabFilters = (copy.tabFilters || []).map(t => ({ ...t, id: uid("t") }));
-  const idx = state.profiles.findIndex(x => x.id === p.id);
+  copy.headers = (copy.headers || []).map((h) => ({ ...h, id: uid("h") }));
+  copy.filters = (copy.filters || []).map((f) => ({ ...f, id: uid("f") }));
+  copy.tabFilters = (copy.tabFilters || []).map((t) => ({
+    ...t,
+    id: uid("t"),
+  }));
+  const idx = state.profiles.findIndex((x) => x.id === p.id);
   state.profiles.splice(idx + 1, 0, copy);
   state.activeProfileId = copy.id;
   saveState();
@@ -279,7 +362,7 @@ function deleteProfile() {
   const p = getActiveProfile();
   if (!p) return;
   if (!confirm(`Delete profile "${p.name}"?`)) return;
-  state.profiles = state.profiles.filter(x => x.id !== p.id);
+  state.profiles = state.profiles.filter((x) => x.id !== p.id);
   if (state.profiles.length === 0) {
     state.profiles = [createDefaultProfileObject("Profile 1")];
   }
@@ -291,10 +374,15 @@ function deleteProfile() {
 function exportProfile() {
   const p = getActiveProfile();
   if (!p) return;
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(p, null, 2));
+  const dataStr =
+    "data:text/json;charset=utf-8," +
+    encodeURIComponent(JSON.stringify(p, null, 2));
   const a = document.createElement("a");
   a.setAttribute("href", dataStr);
-  a.setAttribute("download", `profile_${p.name.toLowerCase().replace(/\s+/g, "_")}.json`);
+  a.setAttribute(
+    "download",
+    `profile_${p.name.toLowerCase().replace(/\s+/g, "_")}.json`,
+  );
   a.click();
 }
 
@@ -307,11 +395,12 @@ function handleImportFile(e) {
       const imported = JSON.parse(ev.target.result);
       if (imported.profiles && Array.isArray(imported.profiles)) {
         // Full backup: append profiles
-        imported.profiles.forEach(pr => {
+        imported.profiles.forEach((pr) => {
           pr.id = pr.id || uid("profile");
           state.profiles.push(pr);
         });
-        state.activeProfileId = imported.profiles[imported.profiles.length - 1].id;
+        state.activeProfileId =
+          imported.profiles[imported.profiles.length - 1].id;
       } else if (imported.id || imported.headers) {
         // Single profile
         imported.id = uid("profile");
@@ -336,12 +425,12 @@ function handleImportFile(e) {
 function showHelp() {
   alert(
     "OpenHeader — Help\n\n" +
-    "• Request headers: add/remove headers sent with your requests.\n" +
-    "• Response headers: add/remove headers on responses.\n" +
-    "• Set vs Remove: 'Set' overrides a header value; 'Remove' strips it.\n" +
-    "• URL filters: optional regexes (e.g. .*://example.com/.*) to limit where changes apply. With no filters, changes apply everywhere.\n" +
-    "• Profiles: switch from the badge in the top-left; manage them from the ⋮ menu.\n" +
-    "• Pause: the ⏸ button temporarily disables all modifications."
+      "• Request headers: add/remove headers sent with your requests.\n" +
+      "• Response headers: add/remove headers on responses.\n" +
+      "• Set vs Remove: 'Set' overrides a header value; 'Remove' strips it.\n" +
+      "• URL filters: optional regexes (e.g. .*://example.com/.*) to limit where changes apply. With no filters, changes apply everywhere.\n" +
+      "• Profiles: switch from the badge in the top-left; manage them from the ⋮ menu.\n" +
+      "• Pause: the ⏸ button temporarily disables all modifications.",
   );
 }
 
@@ -349,7 +438,14 @@ function showHelp() {
 function addNewHeader(type) {
   const p = getActiveProfile();
   if (!p) return;
-  p.headers.push({ id: uid("h"), type, action: "set", name: "", value: "", enabled: true });
+  p.headers.push({
+    id: uid("h"),
+    type,
+    action: "set",
+    name: "",
+    value: "",
+    enabled: true,
+  });
   saveState();
   renderHeaderRows(type);
 }
@@ -361,7 +457,10 @@ async function addNewFilter() {
 
   let defaultValue = "";
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (tab && tab.url) {
       const { hostname } = new URL(tab.url);
       if (hostname) {
@@ -370,7 +469,12 @@ async function addNewFilter() {
     }
   } catch (_) {}
 
-  p.filters.push({ id: uid("f"), type: "url_regex", value: defaultValue, enabled: true });
+  p.filters.push({
+    id: uid("f"),
+    type: "url_regex",
+    value: defaultValue,
+    enabled: true,
+  });
   saveState();
   renderFilterRows();
 }
@@ -402,7 +506,7 @@ async function addNewTabFilter() {
   }
 
   // Avoid adding the same tab twice.
-  if (p.tabFilters.some(t => t.tabId === tab.id)) {
+  if (p.tabFilters.some((t) => t.tabId === tab.id)) {
     alert("This tab is already in the list.");
     return;
   }
@@ -412,7 +516,7 @@ async function addNewTabFilter() {
     tabId: tab.id,
     label: tabLabel(tab.url, tab.title),
     favicon: tab.favIconUrl || "",
-    enabled: true
+    enabled: true,
   });
   saveState();
   renderTabFilterRows();
@@ -446,8 +550,10 @@ function toggleCard(cardId, enabled) {
 function renderProfileHeader() {
   const p = getActiveProfile();
   if (!p) return;
-  const idx = state.profiles.findIndex(x => x.id === p.id);
-  document.getElementById("active-profile-badge").textContent = (idx + 1).toString();
+  const idx = state.profiles.findIndex((x) => x.id === p.id);
+  document.getElementById("active-profile-badge").textContent = (
+    idx + 1
+  ).toString();
   document.getElementById("active-profile-name").textContent = p.name;
 }
 
@@ -458,7 +564,9 @@ function renderProfilesDropdown() {
     const isActive = profile.id === state.activeProfileId;
     const btn = document.createElement("button");
     btn.className = `profile-entry ${isActive ? "active" : ""}`;
-    const initial = profile.name ? profile.name.charAt(0).toUpperCase() : (index + 1).toString();
+    const initial = profile.name
+      ? profile.name.charAt(0).toUpperCase()
+      : (index + 1).toString();
     btn.innerHTML = `
       <span class="entry-badge">${escapeHtml(initial)}</span>
       <span class="entry-name">${escapeHtml(profile.name)}</span>
@@ -480,7 +588,7 @@ function renderHeaderRows(type) {
   const p = getActiveProfile();
   if (!p) return;
 
-  const headers = p.headers.filter(h => h.type === type);
+  const headers = p.headers.filter((h) => h.type === type);
   if (headers.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-row";
@@ -533,7 +641,7 @@ function renderHeaderRows(type) {
     });
 
     row.querySelector(".delete-btn").addEventListener("click", () => {
-      p.headers = p.headers.filter(h => h.id !== header.id);
+      p.headers = p.headers.filter((h) => h.id !== header.id);
       saveState();
       renderHeaderRows(type);
     });
@@ -577,7 +685,7 @@ function renderFilterRows() {
       debouncedSave();
     });
     row.querySelector(".delete-btn").addEventListener("click", () => {
-      p.filters = p.filters.filter(f => f.id !== filter.id);
+      p.filters = p.filters.filter((f) => f.id !== filter.id);
       saveState();
       renderFilterRows();
     });
@@ -618,7 +726,7 @@ function renderTabFilterRows() {
     const img = row.querySelector(".tab-filter-favicon");
     if (img) img.addEventListener("error", () => img.remove());
     row.querySelector(".delete-btn").addEventListener("click", () => {
-      p.tabFilters = p.tabFilters.filter(f => f.id !== filter.id);
+      p.tabFilters = p.tabFilters.filter((f) => f.id !== filter.id);
       saveState();
       renderTabFilterRows();
     });
