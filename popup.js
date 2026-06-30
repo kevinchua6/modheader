@@ -33,13 +33,16 @@ function cycleTheme() {
   chrome.storage.local.set({ theme: newMode });
 }
 
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function makeSvgIcon(pathD, className) {
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  if (className) svg.setAttribute("class", className);
+  const path = document.createElementNS(svgNS, "path");
+  path.setAttribute("fill", "currentColor");
+  path.setAttribute("d", pathD);
+  svg.appendChild(path);
+  return svg;
 }
 
 function uid(prefix) {
@@ -559,7 +562,7 @@ function renderProfileHeader() {
 
 function renderProfilesDropdown() {
   const list = document.getElementById("profiles-dropdown-list");
-  list.innerHTML = "";
+  list.replaceChildren();
   state.profiles.forEach((profile, index) => {
     const isActive = profile.id === state.activeProfileId;
     const btn = document.createElement("button");
@@ -567,11 +570,16 @@ function renderProfilesDropdown() {
     const initial = profile.name
       ? profile.name.charAt(0).toUpperCase()
       : (index + 1).toString();
-    btn.innerHTML = `
-      <span class="entry-badge">${escapeHtml(initial)}</span>
-      <span class="entry-name">${escapeHtml(profile.name)}</span>
-      <svg class="entry-check" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    `;
+
+    const badge = document.createElement("span");
+    badge.className = "entry-badge";
+    badge.textContent = initial;
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "entry-name";
+    nameSpan.textContent = profile.name;
+
+    btn.append(badge, nameSpan, makeSvgIcon("M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z", "entry-check"));
     btn.addEventListener("click", () => {
       state.activeProfileId = profile.id;
       closeAllDropdowns();
@@ -584,7 +592,7 @@ function renderProfilesDropdown() {
 
 function renderHeaderRows(type) {
   const container = document.getElementById(`${type}-rows`);
-  container.innerHTML = "";
+  container.replaceChildren();
   const p = getActiveProfile();
   if (!p) return;
 
@@ -600,26 +608,51 @@ function renderHeaderRows(type) {
   headers.forEach((header) => {
     const row = document.createElement("div");
     row.className = "header-row";
-    row.innerHTML = `
-      <input type="checkbox" class="row-check" ${header.enabled ? "checked" : ""} title="Enable this header">
-      <select class="row-select">
-        <option value="set" ${header.action === "set" ? "selected" : ""}>Set</option>
-        <option value="remove" ${header.action === "remove" ? "selected" : ""}>Remove</option>
-      </select>
-      <input type="text" class="row-input row-name" value="${escapeHtml(header.name)}" placeholder="Header name">
-      <input type="text" class="row-input row-value" value="${escapeHtml(header.value)}" placeholder="Value" ${header.action === "remove" ? "disabled" : ""}>
-      <button class="delete-btn" title="Delete">
-        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    `;
 
-    row.querySelector(".row-check").addEventListener("change", (e) => {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "row-check";
+    checkbox.checked = header.enabled;
+    checkbox.title = "Enable this header";
+
+    const select = document.createElement("select");
+    select.className = "row-select";
+    const optSet = document.createElement("option");
+    optSet.value = "set";
+    optSet.textContent = "Set";
+    optSet.selected = header.action === "set";
+    const optRemove = document.createElement("option");
+    optRemove.value = "remove";
+    optRemove.textContent = "Remove";
+    optRemove.selected = header.action === "remove";
+    select.append(optSet, optRemove);
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "row-input row-name";
+    nameInput.value = header.name;
+    nameInput.placeholder = "Header name";
+
+    const valueInput = document.createElement("input");
+    valueInput.type = "text";
+    valueInput.className = "row-input row-value";
+    valueInput.value = header.value;
+    valueInput.placeholder = "Value";
+    if (header.action === "remove") valueInput.disabled = true;
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.title = "Delete";
+    deleteBtn.appendChild(makeSvgIcon("M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"));
+
+    row.append(checkbox, select, nameInput, valueInput, deleteBtn);
+
+    checkbox.addEventListener("change", (e) => {
       header.enabled = e.target.checked;
       saveState();
     });
 
-    const valueInput = row.querySelector(".row-value");
-    row.querySelector(".row-select").addEventListener("change", (e) => {
+    select.addEventListener("change", (e) => {
       header.action = e.target.value;
       if (header.action === "remove") {
         valueInput.disabled = true;
@@ -631,7 +664,7 @@ function renderHeaderRows(type) {
       saveState();
     });
 
-    row.querySelector(".row-name").addEventListener("input", (e) => {
+    nameInput.addEventListener("input", (e) => {
       header.name = e.target.value.trim();
       debouncedSave();
     });
@@ -640,7 +673,7 @@ function renderHeaderRows(type) {
       debouncedSave();
     });
 
-    row.querySelector(".delete-btn").addEventListener("click", () => {
+    deleteBtn.addEventListener("click", () => {
       p.headers = p.headers.filter((h) => h.id !== header.id);
       saveState();
       renderHeaderRows(type);
@@ -652,7 +685,7 @@ function renderHeaderRows(type) {
 
 function renderFilterRows() {
   const container = document.getElementById("filter-rows");
-  container.innerHTML = "";
+  container.replaceChildren();
   const p = getActiveProfile();
   if (!p) return;
   const filters = p.filters || [];
@@ -668,23 +701,35 @@ function renderFilterRows() {
   filters.forEach((filter) => {
     const row = document.createElement("div");
     row.className = "filter-row";
-    row.innerHTML = `
-      <input type="checkbox" class="row-check" ${filter.enabled ? "checked" : ""} title="Enable this filter">
-      <input type="text" class="row-input row-value" value="${escapeHtml(filter.value)}" placeholder="URL regex (e.g. .*://example.com/.*)">
-      <button class="delete-btn" title="Delete">
-        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    `;
 
-    row.querySelector(".row-check").addEventListener("change", (e) => {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "row-check";
+    checkbox.checked = filter.enabled;
+    checkbox.title = "Enable this filter";
+
+    const valueInput = document.createElement("input");
+    valueInput.type = "text";
+    valueInput.className = "row-input row-value";
+    valueInput.value = filter.value;
+    valueInput.placeholder = "URL regex (e.g. .*://example.com/.*)";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.title = "Delete";
+    deleteBtn.appendChild(makeSvgIcon("M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"));
+
+    row.append(checkbox, valueInput, deleteBtn);
+
+    checkbox.addEventListener("change", (e) => {
       filter.enabled = e.target.checked;
       saveState();
     });
-    row.querySelector(".row-value").addEventListener("input", (e) => {
+    valueInput.addEventListener("input", (e) => {
       filter.value = e.target.value.trim();
       debouncedSave();
     });
-    row.querySelector(".delete-btn").addEventListener("click", () => {
+    deleteBtn.addEventListener("click", () => {
       p.filters = p.filters.filter((f) => f.id !== filter.id);
       saveState();
       renderFilterRows();
@@ -696,7 +741,7 @@ function renderFilterRows() {
 
 function renderTabFilterRows() {
   const container = document.getElementById("tab-filter-rows");
-  container.innerHTML = "";
+  container.replaceChildren();
   const p = getActiveProfile();
   if (!p) return;
   const tabFilters = p.tabFilters || [];
@@ -704,28 +749,44 @@ function renderTabFilterRows() {
   tabFilters.forEach((filter) => {
     const row = document.createElement("div");
     row.className = "tab-filter-row";
-    const faviconImg = filter.favicon
-      ? `<img class="tab-filter-favicon" src="${escapeHtml(filter.favicon)}" alt="">`
-      : "";
-    row.innerHTML = `
-      <input type="checkbox" class="row-check" ${filter.enabled ? "checked" : ""} title="Enable this tab filter">
-      <span class="tab-filter-label" title="${escapeHtml(filter.label)} (tab ${filter.tabId})">
-        ${faviconImg}
-        <span class="tab-filter-text">${escapeHtml(filter.label)}</span>
-      </span>
-      <button class="delete-btn" title="Delete">
-        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    `;
 
-    row.querySelector(".row-check").addEventListener("change", (e) => {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "row-check";
+    checkbox.checked = filter.enabled;
+    checkbox.title = "Enable this tab filter";
+
+    const label = document.createElement("span");
+    label.className = "tab-filter-label";
+    label.title = `${filter.label} (tab ${filter.tabId})`;
+
+    if (filter.favicon) {
+      const img = document.createElement("img");
+      img.className = "tab-filter-favicon";
+      img.src = filter.favicon;
+      img.alt = "";
+      // A broken favicon (e.g. tab closed) just hides the image.
+      img.addEventListener("error", () => img.remove());
+      label.appendChild(img);
+    }
+
+    const textSpan = document.createElement("span");
+    textSpan.className = "tab-filter-text";
+    textSpan.textContent = filter.label;
+    label.appendChild(textSpan);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.title = "Delete";
+    deleteBtn.appendChild(makeSvgIcon("M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"));
+
+    row.append(checkbox, label, deleteBtn);
+
+    checkbox.addEventListener("change", (e) => {
       filter.enabled = e.target.checked;
       saveState();
     });
-    // A broken favicon (e.g. tab closed) just hides the image.
-    const img = row.querySelector(".tab-filter-favicon");
-    if (img) img.addEventListener("error", () => img.remove());
-    row.querySelector(".delete-btn").addEventListener("click", () => {
+    deleteBtn.addEventListener("click", () => {
       p.tabFilters = p.tabFilters.filter((f) => f.id !== filter.id);
       saveState();
       renderTabFilterRows();
