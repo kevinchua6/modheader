@@ -109,6 +109,7 @@ function createDefaultProfileObject(name) {
     responseEnabled: true,
     filtersEnabled: true,
     tabFiltersEnabled: true,
+    blockUrlsEnabled: true,
     headers: [
       {
         id: uid("h"),
@@ -121,6 +122,7 @@ function createDefaultProfileObject(name) {
     ],
     filters: [],
     tabFilters: [],
+    blockedUrls: [],
   };
 }
 
@@ -225,6 +227,16 @@ function setupEventListeners() {
         saveState();
       }
     });
+  document
+    .getElementById("block-urls-section-enabled")
+    .addEventListener("change", (e) => {
+      const p = getActiveProfile();
+      if (p) {
+        p.blockUrlsEnabled = e.target.checked;
+        toggleCard("block-urls-card", e.target.checked);
+        saveState();
+      }
+    });
 
   // Add row buttons
   document
@@ -239,6 +251,9 @@ function setupEventListeners() {
   document
     .getElementById("add-tab-filter-btn")
     .addEventListener("click", addNewTabFilter);
+  document
+    .getElementById("add-block-url-btn")
+    .addEventListener("click", addNewBlockedUrl);
 
   // Import file input
   document
@@ -354,6 +369,10 @@ function duplicateProfile() {
     ...t,
     id: uid("t"),
   }));
+  copy.blockedUrls = (copy.blockedUrls || []).map((b) => ({
+    ...b,
+    id: uid("b"),
+  }));
   const idx = state.profiles.findIndex((x) => x.id === p.id);
   state.profiles.splice(idx + 1, 0, copy);
   state.activeProfileId = copy.id;
@@ -428,6 +447,14 @@ function normalizeImportedFilter(filter) {
   };
 }
 
+function normalizeImportedBlockedUrl(blockedUrl) {
+  return {
+    id: uid("b"),
+    value: blockedUrl.value || blockedUrl.urlRegex || "",
+    enabled: blockedUrl.enabled !== false,
+  };
+}
+
 function normalizeImportedTabFilter(tabFilter) {
   return {
     id: uid("t"),
@@ -446,9 +473,11 @@ function normalizeImportedProfile(raw) {
     responseEnabled: raw.responseEnabled !== false,
     filtersEnabled: raw.filtersEnabled !== false,
     tabFiltersEnabled: raw.tabFiltersEnabled !== false,
+    blockUrlsEnabled: raw.blockUrlsEnabled !== false,
     headers: [],
     filters: [],
     tabFilters: [],
+    blockedUrls: [],
   };
 
   const requestHeaders = raw.headers || raw.requestHeaders || [];
@@ -475,6 +504,11 @@ function normalizeImportedProfile(raw) {
     profile.tabFilters = raw.tabFilters
       .filter((tabFilter) => tabFilter && tabFilter.tabId !== undefined)
       .map(normalizeImportedTabFilter);
+  }
+
+  const blockedUrls = raw.blockedUrls || [];
+  if (Array.isArray(blockedUrls)) {
+    profile.blockedUrls = blockedUrls.map(normalizeImportedBlockedUrl);
   }
 
   return profile;
@@ -544,6 +578,7 @@ function showHelp() {
       "• Response headers: add/remove headers on responses.\n" +
       "• Set vs Remove: 'Set' overrides a header value; 'Remove' strips it.\n" +
       "• URL filters: optional regexes (e.g. .*://example.com/.*) to limit where changes apply. With no filters, changes apply everywhere.\n" +
+      "• Block URLs: optional regexes for requests to block outright. Blocking always takes priority over header changes — a blocked request never gets its headers modified.\n" +
       "• Profiles: switch from the badge in the top-left; manage them from the ⋮ menu.\n" +
       "• Pause: the ⏸ button temporarily disables all modifications.",
   );
@@ -592,6 +627,34 @@ async function addNewFilter() {
   });
   saveState();
   renderFilterRows();
+}
+
+async function addNewBlockedUrl() {
+  const p = getActiveProfile();
+  if (!p) return;
+  if (!p.blockedUrls) p.blockedUrls = [];
+
+  let defaultValue = "";
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab && tab.url) {
+      const { hostname } = new URL(tab.url);
+      if (hostname) {
+        defaultValue = `.*://${hostname}/.*`;
+      }
+    }
+  } catch (_) {}
+
+  p.blockedUrls.push({
+    id: uid("b"),
+    value: defaultValue,
+    enabled: true,
+  });
+  saveState();
+  renderBlockedUrlRows();
 }
 
 // Build a short, readable label (hostname + path) from a tab URL.
@@ -851,6 +914,62 @@ function renderFilterRows() {
   });
 }
 
+function renderBlockedUrlRows() {
+  const container = document.getElementById("block-url-rows");
+  container.replaceChildren();
+  const p = getActiveProfile();
+  if (!p) return;
+  const blockedUrls = p.blockedUrls || [];
+
+  if (blockedUrls.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-row";
+    empty.textContent = "No blocked URLs — nothing is being blocked.";
+    container.appendChild(empty);
+    return;
+  }
+
+  blockedUrls.forEach((blockedUrl) => {
+    const row = document.createElement("div");
+    row.className = "filter-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "row-check";
+    checkbox.checked = blockedUrl.enabled;
+    checkbox.title = "Enable this block rule";
+
+    const valueInput = document.createElement("input");
+    valueInput.type = "text";
+    valueInput.className = "row-input row-value";
+    valueInput.value = blockedUrl.value;
+    valueInput.placeholder = "URL regex to block (e.g. .*://ads.example.com/.*)";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.title = "Delete";
+    deleteBtn.appendChild(makeSvgIcon("M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"));
+
+    row.append(checkbox, valueInput, deleteBtn);
+
+    checkbox.addEventListener("change", (e) => {
+      blockedUrl.enabled = e.target.checked;
+      saveState();
+    });
+    valueInput.addEventListener("input", (e) => {
+      blockedUrl.value = e.target.value.trim();
+      debouncedSave();
+    });
+    deleteBtn.addEventListener("click", () => {
+      p.blockedUrls = p.blockedUrls.filter((b) => b.id !== blockedUrl.id);
+      saveState();
+      renderBlockedUrlRows();
+    });
+
+    container.appendChild(row);
+  });
+}
+
 function renderTabFilterRows() {
   const container = document.getElementById("tab-filter-rows");
   container.replaceChildren();
@@ -932,8 +1051,13 @@ function renderAll() {
   document.getElementById("tab-filters-section-enabled").checked = tabFiltOn;
   toggleCard("tab-filters-card", tabFiltOn);
 
+  const blockUrlsOn = p.blockUrlsEnabled !== false;
+  document.getElementById("block-urls-section-enabled").checked = blockUrlsOn;
+  toggleCard("block-urls-card", blockUrlsOn);
+
   renderHeaderRows("request");
   renderHeaderRows("response");
   renderFilterRows();
   renderTabFilterRows();
+  renderBlockedUrlRows();
 }

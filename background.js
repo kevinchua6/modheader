@@ -45,11 +45,62 @@ async function _rebuildRules() {
     const dynamicAdd = [];
     const sessionAdd = [];
 
+    // Shared rule id counter — block and header-modification rules live in the
+    // same dynamic/session rulesets, so ids must be unique across both.
+    let ruleId = 1;
+
     if (enabled && activeProfile) {
       const requestEnabled = activeProfile.requestEnabled !== false;
       const responseEnabled = activeProfile.responseEnabled !== false;
       const filtersEnabled = activeProfile.filtersEnabled !== false;
       const tabFiltersEnabled = activeProfile.tabFiltersEnabled !== false;
+      const blockUrlsEnabled = activeProfile.blockUrlsEnabled !== false;
+
+      // Tab IDs restrict where rules apply. With no tab filters, rules apply
+      // to all tabs (no tabIds condition).
+      const activeTabIds = tabFiltersEnabled
+        ? [
+            ...new Set(
+              (activeProfile.tabFilters || [])
+                .filter(
+                  (t) =>
+                    t.enabled && Number.isInteger(t.tabId) && t.tabId >= 0,
+                )
+                .map((t) => t.tabId),
+            ),
+          ]
+        : [];
+
+      // Blocked URLs take priority over header modifications: give them a
+      // higher DNR priority so a matching block rule wins and the request
+      // (along with any header modification) never goes through.
+      const activeBlockedUrls = blockUrlsEnabled
+        ? (activeProfile.blockedUrls || []).filter((b) => b.enabled && b.value)
+        : [];
+
+      for (const blocked of activeBlockedUrls) {
+        try {
+          new RegExp(blocked.value);
+        } catch (e) {
+          console.error(`Invalid regex: ${blocked.value}`, e);
+          continue;
+        }
+        const condition = {
+          regexFilter: blocked.value,
+          resourceTypes: ALL_RESOURCE_TYPES,
+        };
+        const rule = {
+          id: ruleId++,
+          priority: 2,
+          action: { type: "block" },
+          condition,
+        };
+        if (activeTabIds.length > 0) {
+          sessionAdd.push({ ...rule, condition: { ...condition, tabIds: activeTabIds } });
+        } else {
+          dynamicAdd.push(rule);
+        }
+      }
 
       // Filter enabled headers
       const activeHeaders = (activeProfile.headers || []).filter(
@@ -110,22 +161,6 @@ async function _rebuildRules() {
           }
         }
 
-        // Tab IDs restrict where rules apply. With no tab filters, rules apply
-        // to all tabs (no tabIds condition).
-        const activeTabIds = tabFiltersEnabled
-          ? [
-              ...new Set(
-                (activeProfile.tabFilters || [])
-                  .filter(
-                    (t) =>
-                      t.enabled && Number.isInteger(t.tabId) && t.tabId >= 0,
-                  )
-                  .map((t) => t.tabId),
-              ),
-            ]
-          : [];
-
-        let ruleId = 1;
         for (const cond of urlConditions) {
           if (activeTabIds.length > 0) {
             sessionAdd.push({

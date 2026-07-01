@@ -110,6 +110,24 @@
       </button>
     </section>
 
+    <!-- Block URLs (optional; takes priority over header modifications) -->
+    <section class="card" id="block-urls-card">
+      <div class="card-head">
+        <h2 class="card-title">Block URLs <span class="card-subtitle">optional</span></h2>
+        <label class="switch" title="Enable URL blocking">
+          <input type="checkbox" id="block-urls-section-enabled">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="rows" id="block-url-rows"></div>
+      <button id="add-block-url-btn" class="add-row-btn">
+        <svg viewBox="0 0 24 24">
+          <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+        Add blocked URL
+      </button>
+    </section>
+
     <!-- Tab filters (optional) -->
     <section class="card" id="tab-filters-card">
       <div class="card-head">
