@@ -389,40 +389,152 @@ function exportProfile() {
   a.click();
 }
 
-function handleImportFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const imported = JSON.parse(ev.target.result);
-      if (imported.profiles && Array.isArray(imported.profiles)) {
-        // Full backup: append profiles
-        imported.profiles.forEach((pr) => {
-          pr.id = pr.id || uid("profile");
-          state.profiles.push(pr);
-        });
-        state.activeProfileId =
-          imported.profiles[imported.profiles.length - 1].id;
-      } else if (imported.id || imported.headers) {
-        // Single profile
-        imported.id = uid("profile");
-        state.profiles.push(imported);
-        state.activeProfileId = imported.id;
-      } else {
-        alert("Invalid profile file format.");
-        return;
-      }
-      saveState();
-      renderAll();
-      alert("Import successful!");
-    } catch (err) {
-      alert("Failed to parse file: " + err.message);
-    } finally {
-      e.target.value = "";
-    }
+// ---------- Import helpers ----------
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => resolve(ev.target.result);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file);
+  });
+}
+
+function isModHeaderHeader(header) {
+  return header && header.appendMode !== undefined && !header.type;
+}
+
+function normalizeImportedHeader(header, defaultType) {
+  const type = header.type || defaultType || "request";
+  let action = header.action;
+  if (!action) {
+    action = header.appendMode ? "set" : "set";
+  }
+  return {
+    id: uid("h"),
+    type,
+    action,
+    name: header.name || "",
+    value: header.value || "",
+    enabled: header.enabled !== false,
   };
-  reader.readAsText(file);
+}
+
+function normalizeImportedFilter(filter) {
+  return {
+    id: uid("f"),
+    type: filter.type || "url_regex",
+    value: filter.value || filter.urlRegex || "",
+    enabled: filter.enabled !== false,
+  };
+}
+
+function normalizeImportedTabFilter(tabFilter) {
+  return {
+    id: uid("t"),
+    tabId: tabFilter.tabId,
+    label: tabFilter.label || `Tab ${tabFilter.tabId}`,
+    favicon: tabFilter.favicon || "",
+    enabled: tabFilter.enabled !== false,
+  };
+}
+
+function normalizeImportedProfile(raw) {
+  const profile = {
+    id: uid("profile"),
+    name: raw.name || raw.title || "Imported Profile",
+    requestEnabled: raw.requestEnabled !== false,
+    responseEnabled: raw.responseEnabled !== false,
+    filtersEnabled: raw.filtersEnabled !== false,
+    tabFiltersEnabled: raw.tabFiltersEnabled !== false,
+    headers: [],
+    filters: [],
+    tabFilters: [],
+  };
+
+  const requestHeaders = raw.headers || raw.requestHeaders || [];
+  const responseHeaders = raw.responseHeaders || raw.respHeaders || [];
+  const modHeaderFormat = Array.isArray(requestHeaders) && requestHeaders.some(isModHeaderHeader);
+
+  if (Array.isArray(requestHeaders)) {
+    requestHeaders.forEach((header) => {
+      profile.headers.push(normalizeImportedHeader(header, modHeaderFormat ? "request" : undefined));
+    });
+  }
+  if (Array.isArray(responseHeaders)) {
+    responseHeaders.forEach((header) => {
+      profile.headers.push(normalizeImportedHeader(header, "response"));
+    });
+  }
+
+  const filters = raw.filters || raw.urlFilters || [];
+  if (Array.isArray(filters)) {
+    profile.filters = filters.map(normalizeImportedFilter);
+  }
+
+  if (Array.isArray(raw.tabFilters)) {
+    profile.tabFilters = raw.tabFilters
+      .filter((tabFilter) => tabFilter && tabFilter.tabId !== undefined)
+      .map(normalizeImportedTabFilter);
+  }
+
+  return profile;
+}
+
+function extractProfilesFromImport(parsed) {
+  if (Array.isArray(parsed)) {
+    return parsed.filter((item) => item && typeof item === "object");
+  }
+  if (parsed && Array.isArray(parsed.profiles)) {
+    return parsed.profiles;
+  }
+  if (parsed && typeof parsed === "object" && (parsed.headers || parsed.title || parsed.name || parsed.id)) {
+    return [parsed];
+  }
+  return null;
+}
+
+async function handleImportFile(e) {
+  const files = Array.from(e.target.files || []);
+  if (files.length === 0) return;
+
+  let importedCount = 0;
+  let lastImportedId = null;
+  const errors = [];
+
+  for (const file of files) {
+    try {
+      const text = await readFileAsText(file);
+      const parsed = JSON.parse(text);
+      const rawProfiles = extractProfilesFromImport(parsed);
+      if (!rawProfiles || rawProfiles.length === 0) {
+        errors.push(`${file.name}: invalid profile file format`);
+        continue;
+      }
+
+      const normalizedProfiles = rawProfiles.map(normalizeImportedProfile);
+      normalizedProfiles.forEach((profile) => state.profiles.push(profile));
+      importedCount += normalizedProfiles.length;
+      lastImportedId = normalizedProfiles[normalizedProfiles.length - 1].id;
+    } catch (err) {
+      errors.push(`${file.name}: ${err.message}`);
+    }
+  }
+
+  e.target.value = "";
+
+  if (importedCount > 0) {
+    state.activeProfileId = lastImportedId;
+    saveState();
+    renderAll();
+  }
+
+  if (errors.length > 0 && importedCount > 0) {
+    alert(`Imported ${importedCount} profile(s).\n\nSome files failed:\n${errors.join("\n")}`);
+  } else if (errors.length > 0) {
+    alert(`Import failed:\n${errors.join("\n")}`);
+  } else if (importedCount > 0) {
+    alert(`Imported ${importedCount} profile(s)!`);
+  }
 }
 
 function showHelp() {
