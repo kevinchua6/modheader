@@ -3,6 +3,19 @@
   --bg-color: #2E3440;
   --header-bg: linear-gradient(135deg, #4C566A 0%, #3B4252 100%);
   --header-border: #4C566A;
+  --header-fg: #ffffff;
+  --header-fg-muted: rgba(255, 255, 255, 0.85);
+  --header-control-bg: rgba(255, 255, 255, 0.06);
+  --header-control-hover: rgba(255, 255, 255, 0.14);
+  --header-control-active: rgba(255, 255, 255, 0.16);
+  --header-control-border: rgba(255, 255, 255, 0.25);
+  --header-badge-bg: rgba(255, 255, 255, 0.22);
+  --header-badge-fg: #ffffff;
+  --header-input-bg: rgba(255, 255, 255, 0.12);
+  --header-input-border: #ffffff;
+  --header-pause-bg: rgba(255, 255, 255, 0.18);
+  --header-pause-ring: rgba(255, 255, 255, 0.22);
+  --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   --card-bg: #3B4252;
   --border: #434C5E;
   --border-soft: #4C566A;
@@ -21,7 +34,10 @@
   --focus-ring: rgba(136, 192, 208, 0.25);
   --row-hover: #434C5E;
   --menu-bg: #3B4252;
+  --active-entry-bg: rgba(125, 196, 170, 0.08);
+  --danger-hover-bg: rgba(191, 97, 106, 0.12);
   --badge-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
+  --badge-fg: #ffffff;
   --dropdown-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
   --t: 0.18s;
   --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -31,56 +47,88 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     --bg-color: #ffffff;
-    --header-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
-    --header-border: #81A1C1;
+    --header-bg: #dae4f5;
+    --header-border: #c5d4ea;
+    --header-fg: #2E3440;
+    --header-fg-muted: #4C566A;
+    --header-control-bg: rgba(255, 255, 255, 0.22);
+    --header-control-hover: rgba(255, 255, 255, 0.32);
+    --header-control-active: rgba(255, 255, 255, 0.38);
+    --header-control-border: rgba(255, 255, 255, 0.45);
+    --header-badge-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
+    --header-badge-fg: #ffffff;
+    --header-input-bg: rgba(255, 255, 255, 0.55);
+    --header-input-border: #5E81AC;
+    --header-pause-bg: rgba(255, 255, 255, 0.28);
+    --header-pause-ring: rgba(255, 255, 255, 0.35);
+    --header-shadow: 0 1px 0 #c5d4ea;
     --card-bg: #edf3ff;
-    --border: #D8DEE9;
-    --border-soft: #C8D0DC;
+    --border: #cddbf0;
+    --border-soft: #b8cae6;
     --text-main: #2E3440;
     --text-muted: #4C566A;
-    --text-dim: #8A97A8;
+    --text-dim: #7a8aa0;
     --accent-blue: #5E81AC;
     --accent-blue-hover: #4272A0;
     --accent-red: #BF616A;
     --accent-red-hover: #A8535C;
     --accent-green: #7DC4AA;
     --accent-green-hover: #69B097;
-    --input-bg: #ECEFF4;
-    --input-border: #C8D0DC;
+    --input-bg: #ffffff;
+    --input-border: #c2d4eb;
     --input-focus: #5E81AC;
     --focus-ring: rgba(94, 129, 172, 0.25);
-    --row-hover: #D8DEE9;
-    --menu-bg: #E5E9F0;
-    --badge-bg: #94abc8;
-    --dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    --row-hover: #dde7fa;
+    --menu-bg: #ffffff;
+    --active-entry-bg: rgba(94, 129, 172, 0.1);
+    --danger-hover-bg: rgba(191, 97, 106, 0.1);
+    --badge-bg: linear-gradient(135deg, #6b8fb8 0%, #5E81AC 100%);
+    --badge-fg: #ffffff;
+    --dropdown-shadow: 0 8px 24px rgba(46, 52, 64, 0.12), 0 0 0 1px rgba(205, 219, 240, 0.8);
   }
 }
 
 /* Nord Light — explicit override */
 :root[data-theme="light"] {
   --bg-color: #ffffff;
-  --header-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
-  --header-border: #81A1C1;
+  --header-bg: #dae4f5;
+  --header-border: #c5d4ea;
+  --header-fg: #2E3440;
+  --header-fg-muted: #4C566A;
+  --header-control-bg: rgba(255, 255, 255, 0.22);
+  --header-control-hover: rgba(255, 255, 255, 0.32);
+  --header-control-active: rgba(255, 255, 255, 0.38);
+  --header-control-border: rgba(255, 255, 255, 0.45);
+  --header-badge-bg: linear-gradient(135deg, #5E81AC 0%, #4272A0 100%);
+  --header-badge-fg: #ffffff;
+  --header-input-bg: rgba(255, 255, 255, 0.55);
+  --header-input-border: #5E81AC;
+  --header-pause-bg: rgba(255, 255, 255, 0.28);
+  --header-pause-ring: rgba(255, 255, 255, 0.35);
+  --header-shadow: 0 1px 0 #c5d4ea;
   --card-bg: #edf3ff;
-  --border: #D8DEE9;
-  --border-soft: #C8D0DC;
+  --border: #cddbf0;
+  --border-soft: #b8cae6;
   --text-main: #2E3440;
   --text-muted: #4C566A;
-  --text-dim: #8A97A8;
+  --text-dim: #7a8aa0;
   --accent-blue: #5E81AC;
   --accent-blue-hover: #4272A0;
   --accent-red: #BF616A;
   --accent-red-hover: #A8535C;
   --accent-green: #7DC4AA;
   --accent-green-hover: #69B097;
-  --input-bg: #ECEFF4;
-  --input-border: #C8D0DC;
+  --input-bg: #ffffff;
+  --input-border: #c2d4eb;
   --input-focus: #5E81AC;
   --focus-ring: rgba(94, 129, 172, 0.25);
-  --row-hover: #D8DEE9;
-  --menu-bg: #E5E9F0;
-  --badge-bg: #94abc8;
-  --dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --row-hover: #dde7fa;
+  --menu-bg: #ffffff;
+  --active-entry-bg: rgba(94, 129, 172, 0.1);
+  --danger-hover-bg: rgba(191, 97, 106, 0.1);
+  --badge-bg: linear-gradient(135deg, #6b8fb8 0%, #5E81AC 100%);
+  --badge-fg: #ffffff;
+  --dropdown-shadow: 0 8px 24px rgba(46, 52, 64, 0.12), 0 0 0 1px rgba(205, 219, 240, 0.8);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -140,7 +188,7 @@ body.preload *::after {
   justify-content: space-between;
   align-items: center;
   padding: 0 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--header-shadow);
 }
 
 .header-left { position: relative; display: flex; align-items: center; }
@@ -151,30 +199,33 @@ body.preload *::after {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--header-control-bg);
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 4px 8px 4px 4px;
   cursor: pointer;
-  color: white;
+  color: var(--header-fg);
   transition: background var(--t), border-color var(--t);
   max-width: 320px;
 }
-.profile-switcher:hover { background: rgba(255, 255, 255, 0.14); }
-.profile-switcher.open { background: rgba(255, 255, 255, 0.16); border-color: rgba(255,255,255,0.25); }
+.profile-switcher:hover { background: var(--header-control-hover); }
+.profile-switcher.open {
+  background: var(--header-control-active);
+  border-color: var(--header-control-border);
+}
 
 .profile-badge {
   flex-shrink: 0;
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--header-badge-bg);
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 700;
   font-size: 12px;
-  color: white;
+  color: var(--header-badge-fg);
 }
 .profile-switcher-name {
   font-size: 14px;
@@ -187,10 +238,10 @@ body.preload *::after {
 
 /* Inline rename input (sits where switcher was) */
 .profile-name-input {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid white;
+  background: var(--header-input-bg);
+  border: 1px solid var(--header-input-border);
   border-radius: 8px;
-  color: white;
+  color: var(--header-fg);
   font-size: 14px;
   font-weight: 600;
   padding: 6px 10px;
@@ -202,7 +253,7 @@ body.preload *::after {
 .header-action-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--header-fg-muted);
   width: 34px;
   height: 34px;
   border-radius: 6px;
@@ -213,8 +264,11 @@ body.preload *::after {
   transition: background var(--t), color var(--t);
 }
 .header-action-btn svg { width: 18px; height: 18px; }
-.header-action-btn:hover { background: rgba(255, 255, 255, 0.15); color: white; }
-.header-action-btn.pause { background: rgba(255, 255, 255, 0.18); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset; }
+.header-action-btn:hover { background: var(--header-control-hover); color: var(--header-fg); }
+.header-action-btn.pause {
+  background: var(--header-pause-bg);
+  box-shadow: 0 0 0 1px var(--header-pause-ring) inset;
+}
 .header-action-btn.play { background: var(--accent-green); color: white; }
 .header-action-btn.play:hover { background: var(--accent-green-hover); }
 
@@ -258,8 +312,8 @@ body.preload *::after {
 }
 .dropdown-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 .dropdown-item:hover { background: var(--row-hover); }
-.dropdown-item.accent { color: var(--accent-blue-hover); font-weight: 600; }
-.dropdown-item.danger:hover { background: rgba(224, 56, 56, 0.14); color: var(--accent-red-hover); }
+.dropdown-item.accent { color: var(--accent-blue); font-weight: 600; }
+.dropdown-item.danger:hover { background: var(--danger-hover-bg); color: var(--accent-red-hover); }
 .dropdown-divider { height: 1px; background: var(--border); margin: 5px 4px; }
 
 /* Profile entry in switcher dropdown */
@@ -290,7 +344,7 @@ body.preload *::after {
   font-weight: 700;
   font-size: 11px;
   flex-shrink: 0;
-  color: white;
+  color: var(--badge-fg);
 }
 .profile-entry .entry-name {
   flex: 1;
@@ -300,7 +354,7 @@ body.preload *::after {
 }
 .profile-entry .entry-check { width: 16px; height: 16px; color: var(--accent-green); opacity: 0; }
 .profile-entry.active .entry-check { opacity: 1; }
-.profile-entry.active { background: rgba(125, 196, 170, 0.08); }
+.profile-entry.active { background: var(--active-entry-bg); }
 
 /* ---------- Content ---------- */
 .content {
@@ -510,7 +564,7 @@ body.extension-disabled .card:not(.disabled) {
   transition: background var(--t), color var(--t);
 }
 .delete-btn svg { width: 16px; height: 16px; }
-.delete-btn:hover { background: rgba(224, 56, 56, 0.12); color: var(--accent-red-hover); }
+.delete-btn:hover { background: var(--danger-hover-bg); color: var(--accent-red-hover); }
 
 /* Empty state */
 .empty-row {
@@ -537,4 +591,4 @@ body.extension-disabled .card:not(.disabled) {
   transition: background var(--t), color var(--t);
 }
 .add-row-btn svg { width: 16px; height: 16px; }
-.add-row-btn:hover { background: rgba(94, 161, 247, 0.1); color: var(--accent-blue-hover); }
+.add-row-btn:hover { background: rgba(94, 129, 172, 0.12); color: var(--accent-blue-hover); }
